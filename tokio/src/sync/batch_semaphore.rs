@@ -53,7 +53,7 @@ pub(crate) struct AcquireError(());
 pub(crate) struct Acquire<'a> {
     node: Waiter,
     semaphore: &'a Semaphore,
-    num_permits: u16,
+    num_permits: u32,
     queued: bool,
 }
 
@@ -159,7 +159,7 @@ impl Semaphore {
         }
     }
 
-    pub(crate) fn try_acquire(&self, num_permits: u16) -> Result<(), TryAcquireError> {
+    pub(crate) fn try_acquire(&self, num_permits: u32) -> Result<(), TryAcquireError> {
         let mut curr = self.permits.load(Acquire);
         let num_permits = (num_permits as usize) << Self::PERMIT_SHIFT;
         loop {
@@ -182,7 +182,7 @@ impl Semaphore {
         }
     }
 
-    pub(crate) fn acquire(&self, num_permits: u16) -> Acquire<'_> {
+    pub(crate) fn acquire(&self, num_permits: u32) -> Acquire<'_> {
         Acquire::new(self, num_permits)
     }
 
@@ -247,7 +247,7 @@ impl Semaphore {
     fn poll_acquire(
         &self,
         cx: &mut Context<'_>,
-        num_permits: u16,
+        num_permits: u32,
         node: Pin<&mut Waiter>,
         queued: bool,
     ) -> Poll<Result<(), AcquireError>> {
@@ -356,7 +356,7 @@ impl fmt::Debug for Semaphore {
 }
 
 impl Waiter {
-    fn new(num_permits: u16) -> Self {
+    fn new(num_permits: u32) -> Self {
         Waiter {
             waker: UnsafeCell::new(None),
             state: AtomicUsize::new(num_permits as usize),
@@ -409,7 +409,7 @@ impl Future for Acquire<'_> {
 }
 
 impl<'a> Acquire<'a> {
-    fn new(semaphore: &'a Semaphore, num_permits: u16) -> Self {
+    fn new(semaphore: &'a Semaphore, num_permits: u32) -> Self {
         Self {
             node: Waiter::new(num_permits),
             semaphore,
@@ -418,14 +418,14 @@ impl<'a> Acquire<'a> {
         }
     }
 
-    fn project(self: Pin<&mut Self>) -> (Pin<&mut Waiter>, &Semaphore, u16, &mut bool) {
+    fn project(self: Pin<&mut Self>) -> (Pin<&mut Waiter>, &Semaphore, u32, &mut bool) {
         fn is_unpin<T: Unpin>() {}
         unsafe {
             // Safety: all fields other than `node` are `Unpin`
 
             is_unpin::<&Semaphore>();
             is_unpin::<&mut bool>();
-            is_unpin::<u16>();
+            is_unpin::<u32>();
 
             let this = self.get_unchecked_mut();
             (
