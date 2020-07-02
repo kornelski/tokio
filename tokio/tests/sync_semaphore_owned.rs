@@ -47,6 +47,18 @@ async fn acquire() {
 }
 
 #[tokio::test]
+async fn acquire_n() {
+    let sem = Arc::new(Semaphore::new(5));
+    let p1 = sem.clone().try_acquire_n_owned(3).unwrap();
+    let sem_clone = sem.clone();
+    let j = tokio::spawn(async move {
+        let _p2 = sem_clone.acquire_n_owned(2).await;
+    });
+    drop(p1);
+    j.await.unwrap();
+}
+
+#[tokio::test]
 async fn add_permits() {
     let sem = Arc::new(Semaphore::new(0));
     let sem_clone = sem.clone();

@@ -22,6 +22,24 @@ fn try_acquire() {
     assert!(p3.is_ok());
 }
 
+#[test]
+fn try_acquire_n() {
+    let sem = Arc::new(Semaphore::new(3));
+    {
+        let p1 = sem.try_acquire_n(4);
+        assert!(p1.is_err());
+        let p2 = sem.try_acquire_n(2);
+        match p2.as_ref() {
+            Ok(p2) => assert_eq!(2, p2.num_permits()),
+            Err(_) => panic!(),
+        };
+        let p3 = sem.try_acquire_n(2);
+        assert!(p3.is_err());
+    }
+    let p4 = sem.try_acquire();
+    assert!(p4.is_ok());
+}
+
 #[tokio::test]
 async fn acquire() {
     let sem = Arc::new(Semaphore::new(1));
@@ -29,6 +47,18 @@ async fn acquire() {
     let sem_clone = sem.clone();
     let j = tokio::spawn(async move {
         let _p2 = sem_clone.acquire().await;
+    });
+    drop(p1);
+    j.await.unwrap();
+}
+
+#[tokio::test]
+async fn acquire_n() {
+    let sem = Arc::new(Semaphore::new(5));
+    let p1 = sem.try_acquire_n(3).unwrap();
+    let sem_clone = sem.clone();
+    let j = tokio::spawn(async move {
+        let _p2 = sem_clone.acquire_n(2).await;
     });
     drop(p1);
     j.await.unwrap();
