@@ -249,6 +249,11 @@ impl<'a> SemaphorePermits<'a> {
     pub fn forget(mut self) {
         self.permits = 0;
     }
+
+    /// Number of permits acquired in this instance
+    pub fn num_permits(&self) -> u32 {
+        self.permits
+    }
 }
 
 impl<'a> Drop for SemaphorePermits<'_> {
@@ -263,6 +268,11 @@ impl OwnedSemaphorePermits {
     /// semaphore.
     pub fn forget(mut self) {
         self.permits = 0;
+    }
+
+    /// Number of permits acquired in this instance
+    pub fn num_permits(&self) -> u32 {
+        self.permits
     }
 }
 
