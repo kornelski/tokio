@@ -70,6 +70,53 @@ fn forget() {
     assert!(sem.try_acquire_owned().is_err());
 }
 
+#[test]
+fn release_n() {
+    let sem = Arc::new(Semaphore::new(3));
+    {
+        let p1 = sem.clone().try_acquire_n_owned(3);
+        assert!(p1.is_ok());
+        let mut p1 = p1.unwrap();
+        p1.release_n(2);
+        let p2 = sem.clone().try_acquire_n_owned(2);
+        assert!(p2.is_ok());
+    }
+    let p3 = sem.clone().try_acquire_n_owned(3);
+    assert!(p3.is_ok());
+}
+
+#[test]
+#[should_panic(expected = "No enough permits available")]
+fn release_n_panic() {
+    let sem = Arc::new(Semaphore::new(3));
+    let p1 = sem.clone().try_acquire_n_owned(3);
+    assert!(p1.is_ok());
+    let mut p1 = p1.unwrap();
+    p1.release_n(4);
+}
+
+#[test]
+fn forget_n() {
+    let sem = Arc::new(Semaphore::new(3));
+    {
+        let mut p = sem.clone().try_acquire_n_owned(3).unwrap();
+        assert_eq!(sem.available_permits(), 0);
+        p.forget_n(3);
+        assert_eq!(sem.available_permits(), 0);
+    }
+    assert_eq!(sem.available_permits(), 0);
+    assert!(sem.clone().try_acquire_owned().is_err());
+}
+
+#[test]
+#[should_panic(expected = "No enough permits available")]
+fn forget_n_panic() {
+    let sem = Arc::new(Semaphore::new(3));
+    let mut p = sem.clone().try_acquire_n_owned(3).unwrap();
+    assert_eq!(sem.available_permits(), 0);
+    p.forget_n(4);
+}
+
 #[tokio::test]
 async fn stresstest() {
     let sem = Arc::new(Semaphore::new(5));

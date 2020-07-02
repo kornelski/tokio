@@ -254,6 +254,27 @@ impl<'a> SemaphorePermits<'a> {
     pub fn num_permits(&self) -> u32 {
         self.permits
     }
+
+    /// Release a number of permits back to the semaphore.
+    ///
+    /// The maximum number of permits is `self.num_permits()`, and this function will panic if the limit is exceeded.
+    pub fn release_n(&mut self, num_permits: u32) {
+        if self.permits < num_permits {
+            panic!("No enough permits available");
+        }
+        self.permits -= num_permits;
+        self.sem.add_permits(num_permits as usize);
+    }
+
+    /// Forgets a number of permits **without** releasing them back to the semaphore.
+    ///
+    /// The maximum number of permits is `self.num_permits()`, and this function will panic if the limit is exceeded.
+    pub fn forget_n(&mut self, num_permits: u32) {
+        if self.permits < num_permits {
+            panic!("No enough permits available");
+        }
+        self.permits -= num_permits;
+    }
 }
 
 impl<'a> Drop for SemaphorePermits<'_> {
@@ -273,6 +294,27 @@ impl OwnedSemaphorePermits {
     /// Number of permits acquired in this instance
     pub fn num_permits(&self) -> u32 {
         self.permits
+    }
+
+    /// Release a number of permits back to the semaphore.
+    ///
+    /// The maximum number of permits is `self.num_permits()`, and this function will panic if the limit is exceeded.
+    pub fn release_n(&mut self, num_permits: u32) {
+        if self.permits < num_permits {
+            panic!("No enough permits available");
+        }
+        self.permits -= num_permits;
+        self.sem.add_permits(num_permits as usize);
+    }
+
+    /// Forgets a number of permits **without** releasing them back to the semaphore.
+    ///
+    /// The maximum number of permits is `self.num_permits()`, and this function will panic if the limit is exceeded.
+    pub fn forget_n(&mut self, num_permits: u32) {
+        if self.permits < num_permits {
+            panic!("No enough permits available");
+        }
+        self.permits -= num_permits;
     }
 }
 
